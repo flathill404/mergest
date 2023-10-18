@@ -1,0 +1,132 @@
+name: ci
+on:
+  push:
+    branches: [main, next]
+  pull_request:
+    branches: ['*']
+
+jobs:
+  main:
+    name: 'Main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+      - run: yarn install --frozen-lockfile
+      - run: npm run format
+      - run: npm run lint
+      - run: npm run build
+      - run: NODE_OPTIONS="--no-warnings" npm test
+
+  denoify:
+    name: "Checking if you've done denoify"
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+      - run: yarn install --frozen-lockfile
+      - run: npm run build
+      - run: |
+          npm run denoify
+          if [[ `git status --porcelain` ]]; then
+            exit 1
+          fi
+
+  deno:
+    name: 'Deno'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+      - run: env NAME=Deno deno test --allow-read --allow-env runtime_tests/deno
+
+  bun:
+    name: 'Bun'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: '0.6.9'
+      - run: bun run test:bun
+
+  fastly:
+    name: 'Fastly Compute@Edge'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+      - run: yarn install --frozen-lockfile
+      - run: npm run build
+      - run: npm run test:fastly
+
+  lagon:
+    name: 'Lagon'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+      - run: yarn install --frozen-lockfile
+      - run: npm run build
+      - run: npm i -g @lagon/cli@latest esbuild@latest
+      - run: npm run test:lagon
+
+  node:
+    name: 'Node.js'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+      - run: yarn install --frozen-lockfile
+      - run: npm run build
+      - run: npm run test:node
+
+  wrangler:
+    name: 'Cloudflare Workers'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+      - run: yarn install --frozen-lockfile
+      - run: npm run build
+      - run: npm run test:wrangler
+
+  lambda:
+    name: 'AWS Lambda'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+      - run: yarn install --frozen-lockfile
+      - run: npm run build
+      - run: npm run test:lambda
+
+  lambda-edge:
+    name: 'Lambda@Edge'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+      - run: yarn install --frozen-lockfile
+      - run: npm run build
+      - run: npm run test:lambda-edge
